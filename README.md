@@ -7,6 +7,10 @@ Installation
 The script only requires [python](https://www.python.org/downloads/) to be installed. It uses no external dependencies.
 I have only tested with python 3.3+, but 2.7 may also work.
 
+Download the [zip file](https://github.com/leighmacdonald/tf2_bind_gen/archive/master.zip) and extract it anywhere you want. It 
+does not need to be in the tf2 directory to work.
+
+You can of course clone the repo as well if you have a git client installed.
 
 Usage
 -----
