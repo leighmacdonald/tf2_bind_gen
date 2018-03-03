@@ -1,7 +1,7 @@
-[generic] Get rekt {victim} That makes it {total}! :)
+Get rekt {victim} That makes it {total}! :)
 [generic] Why so mad {victim}?
 [generic] {player} rekt {victim} LOL!
 [market_gardener.crit] Try looking up next time {victim}!
 [tf_projectile_rocket.crit] EZ Crit! Thanks {victim}!
 [tf_projectile_rocket] Thanks for the farm {victim}!
-[world] world > {victim}
+[world] {player} > world > {victim}

@@ -63,15 +63,23 @@ Customizing Your Sick Memes
 ---------------------------
 
 You can customize the binds used by creating or editing the binds.txt file. The format is 1 bind per line and 
-has the following variables which can be used: player, victim, weapon. Some examples are below:
+has the following variables which can be used: 
+ 
+- {player} - Your player name
+- {victim} - The name of the person you killed
+- {weapon} - The weapon you killed them with. (only console names so: "tf_projectile_rocket" and not "Rocket Launcher")
+- {kills} - The number of times you've killed a player with that name. Doesnt currently track Steam ID.
 
-    Get rekt {victim}!
+
+Some examples are below:
+
+    Get rekt {victim} That makes it {total}! :)
     [generic] Why so mad {victim}?
     [generic] {player} rekt {victim} LOL!
     [market_gardener.crit] Try looking up next time {victim}!
     [tf_projectile_rocket.crit] EZ Crit! Thanks {victim}!
     [tf_projectile_rocket] Thanks for the farm {victim}!
-    [world] world > {victim}
+    [world] {player} > world > {victim}
     
 You can specify binds for specific weapon kills and whether they are a crit or not. These keys correspond to the 
 weapon names you see in the console kill log. I don't have a list of all of these, you can check your console logs if 
