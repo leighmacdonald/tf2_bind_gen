@@ -32,10 +32,9 @@ Additionally, you must also add the following launch options to TF2:
      
 This will enable the required output of tf2 log messages to the default log path. -conclearlog is optional but
 it will clear the log file upon startup so the log file should not get too large.
- 
 
     usage: tf2_bind_gen.py [-h] [--log_path LOG_PATH] [--config_path CONFIG_PATH]
-                       [--bind_key BIND_KEY] [--test TEST]
+                       [--bind_key BIND_KEY] [--test] [--binds BINDS]
 
     TF2 Log Tail Parser
     
@@ -45,7 +44,8 @@ it will clear the log file upon startup so the log file should not get too large
       --config_path CONFIG_PATH
                             Path to the .cfg file to be generated
       --bind_key BIND_KEY   Keyboard shortcut used for chat bind
-      --test TEST           Test parsing your existing log files
+      --test                Test parsing your existing log files
+      --binds BINDS         Path to your custom binds file.
       
 The default settings should work for most users. If you want to change the key that the bind gets bound
 too set the --bind_key option to the key of your choosing. For example:
