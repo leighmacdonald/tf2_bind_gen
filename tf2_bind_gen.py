@@ -1,11 +1,42 @@
+import json
 import re
 from collections import namedtuple, defaultdict
 from os import environ
-from os.path import isfile, join
+from os.path import isfile, join, exists
 import logging
 from random import choice
 
-KillMsg = namedtuple("KillMsg", ['player', 'victim', 'weapon', 'crit'])
+KillMsg = namedtuple("KillMsg", ['player', 'victim', 'weapon', 'crit', 'total'])
+
+
+class StatLogger(object):
+    def __init__(self, stats_file, write_every=5):
+        self.stats_file = stats_file
+        self.writer_count = 0
+        self.write_every = write_every
+        self.stats = defaultdict(int)
+
+    def write(self):
+        with open(self.stats_file, "w", encoding='utf8') as log:
+            json.dump(self.stats, log)
+
+    def read(self):
+        if not exists(self.stats_file):
+            return False
+        with open(self.stats_file, encoding='utf8') as log:
+            x = json.load(log)
+            self.stats.update(x)
+
+    def get(self, user_name):
+        return self.stats[user_name]
+
+    def increment(self, user_name):
+        self.stats[user_name] += 1
+        self.writer_count += 1
+        if self.writer_count >= self.write_every:
+            self.write()
+            self.writer_count = 0
+        return self.stats[user_name]
 
 
 class LogParser(object):
@@ -16,17 +47,18 @@ class LogParser(object):
     _re_connected = re.compile(r"^(.+)\sconnected$")
 
     #  Disconnecting from abandoned match server
-    _re_disconnect = re.compile(r"^Disconnecting from abandoned match server$")
+    _re_disconnect = re.compile(r"(^Disconnecting from abandoned match server$|\(Server shutting down\)$)")
 
     _re_bind_key = re.compile(r"^\[(.+?)\](.+?)$")
 
-    def __init__(self, log_path, cfg_path, bind_key, binds_file):
+    def __init__(self, log_path, cfg_path, bind_key, binds_file, stats_file):
         self.log_path = log_path
         self.cfg_path = cfg_path
         self.bind_key = bind_key
         self.username = None
         self.default_bind_key = "generic"
         self.templates = self.read_binds(binds_file)
+        self.stats = StatLogger(stats_file)
 
     def parse_log(self, line):
         if self.username is None:
@@ -38,11 +70,13 @@ class LogParser(object):
         elif self._re_disconnect.match(line):
             self.username = None
             logging.info("Disconnected from server")
+            self.stats.write()
         else:
             match = self._re_kill.search(line)
             if match:
                 msg_args = list(match.groups())
                 msg_args[-1] = True if "crit" in msg_args[-1] else False
+                msg_args.append(self.stats.increment(msg_args[1]))
                 msg = KillMsg(*msg_args)
                 if msg.player == self.username:
                     logging.info(msg)
@@ -70,7 +104,9 @@ class LogParser(object):
     def write_cfg(self, msg: KillMsg):
         with open(self.cfg_path, 'w+') as cfg:
             cfg.write('echo "Loaded log_parser.cfg"\n')
-            cfg.write('bind {} "say {}\n'.format(self.bind_key, self.gen_message(msg)))
+            alias = '''alias bind_gen "say {} "\n'''.format(self.gen_message(msg))
+            logging.debug(alias)
+            cfg.write(alias)
 
     def gen_message(self, msg: KillMsg):
         key = "{}.crit".format(msg.weapon) if msg.crit else "{}".format(msg.weapon)
@@ -78,12 +114,17 @@ class LogParser(object):
             template = choice(self.templates[key])
         except IndexError:
             template = choice(self.templates[self.default_bind_key])
-        output_str = template.format(victim=msg.victim, player=msg.player, weapon=msg.weapon)
+        output_str = template.format(victim=msg.victim, player=msg.player, weapon=msg.weapon,
+                                     total=msg.total)
         return output_str
 
     def start(self):
         for line in self.tail():
             self.parse_log(line)
+
+    def stop(self):
+        logging.info("Shutting down...")
+        self.stats.write()
 
     def read_file(self, log_file):
         for line in open(log_file, encoding='utf8').readlines():
@@ -130,15 +171,21 @@ if __name__ == "__main__":
     log_path_default = join(program_files_path, r"Steam\steamapps\common\Team Fortress 2\tf\console.log")
     config_path_default = join(program_files_path, r"Steam\steamapps\common\Team Fortress 2\tf\cfg\log_parser.cfg")
     parser = argparse.ArgumentParser(description='TF2 Log Tail Parser')
-    parser.add_argument('--log_path', default=log_path_default)
-    parser.add_argument('--config_path', default=config_path_default, help="Path to the .cfg file to be generated")
-    parser.add_argument('--bind_key', default="f2", help="Keyboard shortcut used for chat bind")
-    parser.add_argument('--test', action='store_true', help="Test parsing your existing log files")
-    parser.add_argument('--binds', default="binds.txt", help="Path to your custom binds file.")
+    parser.add_argument('--log_path', default=log_path_default,
+                        help="Path to console.log generated by TF2 (default: {})".format(log_path_default))
+    parser.add_argument('--config_path', default=config_path_default,
+                        help="Path to the .cfg file to be generated (default: {}".format(config_path_default))
+    parser.add_argument('--bind_key', default="f2", help="Keyboard shortcut used for chat bind (default: f2)")
+    parser.add_argument('--test', action='store_true', help="Test parsing your existing log files (default: False)")
+    parser.add_argument('--binds', default="binds.txt", help="Path to your custom binds file. (default: binds.txt)")
+    parser.add_argument('--stats', default="stats.json", help="Path to your stats file. (default: stats.json)")
     args = parser.parse_args()
 
-    parser = LogParser(args.log_path, args.config_path, args.bind_key, args.binds)
+    parser = LogParser(args.log_path, args.config_path, args.bind_key, args.binds, args.stats)
     if args.test:
         parser.read_file(log_path_default)
     else:
-        parser.start()
+        try:
+            parser.start()
+        except KeyboardInterrupt:
+            parser.stop()

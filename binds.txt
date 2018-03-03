@@ -1,4 +1,4 @@
-[generic] Get rekt {victim}!
+[generic] Get rekt {victim} That makes it {total}! :)
 [generic] Why so mad {victim}?
 [generic] {player} rekt {victim} LOL!
 [market_gardener.crit] Try looking up next time {victim}!
