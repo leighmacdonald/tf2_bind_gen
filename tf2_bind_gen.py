@@ -2,7 +2,13 @@ import re
 from collections import namedtuple
 from os import environ
 from os.path import isfile, join
+from itertools import cycle
 import logging
+
+BIND_TEMPLATES = [
+    'Get rekt {}!',
+    'Why so mad {}?'
+]
 
 KillMsg = namedtuple("KillMsg", ['player', 'victim', 'weapon'])
 
@@ -21,6 +27,7 @@ class LogParser(object):
         self.log_path = log_path
         self.cfg_path = cfg_path
         self.bind_key = bind_key
+        self.templates = cycle(BIND_TEMPLATES)
         self.username = None
 
     def parse_log(self, line):
@@ -43,8 +50,10 @@ class LogParser(object):
 
     def write_cfg(self, msg: KillMsg):
         with open(self.cfg_path, 'w+') as cfg:
+            template = next(self.templates)
+            output_str = template.format(msg.victim)
             cfg.write('echo "Loaded log_parser.cfg"\n')
-            cfg.write('bind {} "say Get rekt {}!"\n'.format(self.bind_key, msg.victim))
+            cfg.write('bind {} "say {}\n'.format(self.bind_key, output_str))
 
     def start(self):
         for line in self.tail():
@@ -92,7 +101,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='TF2 Log Tail Parser')
     parser.add_argument('--log_path', default=log_path_default)
     parser.add_argument('--config_path', default=config_path_default, help="Path to the .cfg file to be generated")
-    parser.add_argument('--bind_key', default="f1", help="Keyboard shortcut used for chat bind")
+    parser.add_argument('--bind_key', default="f2", help="Keyboard shortcut used for chat bind")
     parser.add_argument('--test', type=bool, default=False, help="Test parsing your existing log files")
     args = parser.parse_args()
     parser = LogParser(args.log_path, args.config_path, args.bind_key)
