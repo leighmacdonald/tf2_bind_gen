@@ -75,9 +75,9 @@ class LogParser(object):
             if match:
                 msg_args = list(match.groups())
                 msg_args[-1] = True if "crit" in msg_args[-1] else False
-                msg_args.append(self.stats.increment(msg_args[1]))
-                msg = KillMsg(*msg_args)
-                if msg.player == self.username:
+                if msg_args[0] == self.username:
+                    msg_args.append(self.stats.increment(msg_args[1]))
+                    msg = KillMsg(*msg_args)
                     logging.info(msg)
                     self.write_cfg(msg)
                     return msg
