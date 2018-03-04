@@ -85,7 +85,7 @@ class LogParser(object):
     def read_binds(self, file_name):
         found = 0
         binds = defaultdict(list)
-        for line in open(file_name).readlines():
+        for line in open(file_name, encoding='utf8').readlines():
             real_line = line.strip()
             if real_line not in binds:
                 match_key = self._re_bind_key.search(real_line)
@@ -101,7 +101,7 @@ class LogParser(object):
         return binds
 
     def write_cfg(self, msg: KillMsg):
-        with open(self.cfg_path, 'w+') as cfg:
+        with open(self.cfg_path, 'w+', encoding='utf8') as cfg:
             cfg.write('echo "Loaded log_parser.cfg"\n')
             alias = '''alias bind_gen "say {} "\n'''.format(self.gen_message(msg))
             logging.debug(alias)
@@ -135,7 +135,7 @@ class LogParser(object):
         first_call = True
         while True:
             try:
-                with open(self.log_path) as log_file:
+                with open(self.log_path, encoding='utf8') as log_file:
                     if first_call:
                         log_file.seek(0, 2)
                         first_call = False
