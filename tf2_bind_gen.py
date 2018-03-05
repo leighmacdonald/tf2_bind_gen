@@ -1,12 +1,31 @@
 import json
 import re
-from collections import namedtuple, defaultdict
+from collections import defaultdict
 from os import environ
 from os.path import isfile, join, exists
 import logging
 from random import choice
 
-KillMsg = namedtuple("KillMsg", ['player', 'victim', 'weapon', 'crit', 'total'])
+logger = logging.getLogger("bind_gen")
+
+
+class KillMsg(object):
+    def __init__(self, player, victim, weapon, crit, total=0):
+        self.player = player
+        self.victim = victim
+        self.weapon = weapon
+        self.crit = True if "crit" in crit else False
+        self.total = total
+
+    @property
+    def key(self):
+        if self.crit:
+            return "{}.crit".format(self.weapon)
+        else:
+            return self.weapon
+
+    def __str__(self):
+        return "victim: {} weapon: {} crit: {}".format(self.victim, self.weapon, self.crit)
 
 
 class StatLogger(object):
@@ -17,13 +36,13 @@ class StatLogger(object):
         self.stats = defaultdict(int)
 
     def write(self):
-        with open(self.stats_file, "w", encoding='utf8') as log:
+        with open(self.stats_file, "w", encoding='utf-8', errors='ignore') as log:
             json.dump(self.stats, log)
 
     def read(self):
         if not exists(self.stats_file):
             return False
-        with open(self.stats_file, encoding='utf8') as log:
+        with open(self.stats_file, encoding='utf-8', errors='ignore') as log:
             x = json.load(log)
             self.stats.update(x)
 
@@ -64,28 +83,26 @@ class LogParser(object):
             m = self._re_connected.search(line)
             if m:
                 self.username = m.groups()[0]
-                logging.info("Connected with username: {}".format(self.username))
+                logger.info("Connected with username: {}".format(self.username))
                 return
         elif self._re_disconnect.match(line):
             self.username = None
-            logging.info("Disconnected from server")
+            logger.info("Disconnected from server")
             self.stats.write()
         else:
             match = self._re_kill.search(line)
             if match:
-                msg_args = list(match.groups())
-                msg_args[-1] = True if "crit" in msg_args[-1] else False
-                if msg_args[0] == self.username:
-                    msg_args.append(self.stats.increment(msg_args[1]))
-                    msg = KillMsg(*msg_args)
-                    logging.info(msg)
+                msg = KillMsg(*match.groups())
+                if msg.player == self.username:
+                    msg.total = self.stats.increment(msg.victim)
+                    logger.debug(msg)
                     self.write_cfg(msg)
                     return msg
 
     def read_binds(self, file_name):
         found = 0
         binds = defaultdict(list)
-        for line in open(file_name, encoding='utf8').readlines():
+        for line in open(file_name, encoding='utf-8', errors='ignore').readlines():
             real_line = line.strip()
             if real_line not in binds:
                 match_key = self._re_bind_key.search(real_line)
@@ -97,20 +114,19 @@ class LogParser(object):
                     msg = real_line
                 binds[key].append(msg)
                 found += 1
-        logging.info("Loaded {} binds".format(found))
+        logger.info("Loaded {} binds".format(found))
         return binds
 
     def write_cfg(self, msg: KillMsg):
-        with open(self.cfg_path, 'w+', encoding='utf8') as cfg:
+        with open(self.cfg_path, 'w+', encoding='utf-8', errors='ignore') as cfg:
             cfg.write('echo "Loaded log_parser.cfg"\n')
-            alias = '''alias bind_gen "say {} "\n'''.format(self.gen_message(msg))
-            logging.debug(alias)
-            cfg.write(alias)
+            alias = '''alias bind_gen "say {} "'''.format(self.gen_message(msg))
+            logger.debug(alias)
+            cfg.write(alias + "\n")
 
     def gen_message(self, msg: KillMsg):
-        key = "{}.crit".format(msg.weapon) if msg.crit else "{}".format(msg.weapon)
         try:
-            template = choice(self.templates[key])
+            template = choice(self.templates[msg.key])
         except IndexError:
             template = choice(self.templates[self.default_bind_key])
         output_str = template.format(victim=msg.victim, player=msg.player, weapon=msg.weapon,
@@ -122,27 +138,31 @@ class LogParser(object):
             self.parse_log(line)
 
     def stop(self):
-        logging.info("Shutting down...")
+        logger.info("Shutting down...")
         self.stats.write()
 
     def read_file(self, log_file):
-        for line in open(log_file, encoding='utf8').readlines():
+        for line in open(log_file, encoding='utf-8', errors='ignore').readlines():
             msg = self.parse_log(line)
             if msg:
-                print(self.gen_message(msg))
+                logger.info(self.gen_message(msg))
 
     def tail(self):
         first_call = True
         while True:
             try:
-                with open(self.log_path, encoding='utf8') as log_file:
+                with open(self.log_path, encoding='utf-8', errors='ignore') as log_file:
                     if first_call:
                         log_file.seek(0, 2)
                         first_call = False
                     latest_data = log_file.read()
                     while True:
                         if '\n' not in latest_data:
-                            latest_data += log_file.read()
+                            try:
+                                latest_data += log_file.read()
+                            except UnicodeDecodeError as err:
+                                logger.exception(err)
+                                continue
                             if '\n' not in latest_data:
                                 yield ''
                                 if not isfile(self.log_path):
@@ -162,7 +182,6 @@ class LogParser(object):
 if __name__ == "__main__":
     import argparse
 
-    logging.basicConfig(level=logging.DEBUG)
     try:
         program_files_path = environ['PROGRAMFILES(X86)']
     except KeyError:
@@ -177,7 +196,11 @@ if __name__ == "__main__":
     parser.add_argument('--test', action='store_true', help="Test parsing your existing log files (default: False)")
     parser.add_argument('--binds', default="binds.txt", help="Path to your custom binds file. (default: binds.txt)")
     parser.add_argument('--stats', default="stats.json", help="Path to your stats file. (default: stats.json)")
+    parser.add_argument('--debug', action='store_true', help="Set the logging level to debug. (default: False)")
     args = parser.parse_args()
+
+    logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO,
+                        format="[TF2BindGen] [%(levelname)s] %(message)s")
 
     parser = LogParser(args.log_path, args.config_path, args.binds, args.stats)
     if args.test:
