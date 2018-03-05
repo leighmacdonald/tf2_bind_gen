@@ -4,7 +4,7 @@ TF2 Bind Generator
 Installation
 ------------
 
-You can use the pre built executable package available for [download](https://github.com/leighmacdonald/tf2_bind_gen/releases/download/v1.2/tf2_bind_gen-v1.2.zip).
+You can use the pre built executable package available for [download](https://github.com/leighmacdonald/tf2_bind_gen/releases/download/v1.3/tf2_bind_gen-v1.3.zip).
 This includes everything you need to get running.
 
 If you don't trust me or you want to edit or view the code yourself, you must have the below requirements met:
