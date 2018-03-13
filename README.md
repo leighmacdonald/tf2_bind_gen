@@ -1,10 +1,16 @@
-TF2 Bind Generator
-==================
+TF2 Dynamic Chat Bind Generator
+===============================
+
+What Is This?
+-------------
+
+This script can be used to generate new chat binds on the fly based on certain events that happen such as killing a player. This data is parsed from the TF2 console log output. This means that it will update your binds while in game automatically without having to leave. It will randomly choose a chat template from a list of your own template definitions. These definitions can also be customized and grouped based on things like if a kill is from a certain weapon or a crit kill.
+
 
 Installation
 ------------
 
-You can use the pre built executable package available for [download](https://github.com/leighmacdonald/tf2_bind_gen/releases/download/v1.2/tf2_bind_gen-v1.2.zip).
+You can use the pre built executable package available for [download](https://github.com/leighmacdonald/tf2_bind_gen/releases/download/v1.3/tf2_bind_gen-v1.3.zip).
 This includes everything you need to get running.
 
 If you don't trust me or you want to edit or view the code yourself, you must have the below requirements met:
@@ -12,8 +18,8 @@ If you don't trust me or you want to edit or view the code yourself, you must ha
 The script only requires [python](https://www.python.org/downloads/) to be installed. It uses no external dependencies.
 I have only tested with python 3.3+, but 2.7 may also work.
 
-Download the [zip file](https://github.com/leighmacdonald/tf2_bind_gen/archive/master.zip) and extract it anywhere you want. It 
-does not need to be in the tf2 directory to work.
+Download the source [zip file](https://github.com/leighmacdonald/tf2_bind_gen/archive/master.zip) and extract it anywhere you want. It 
+does not need to be, and probably shouldn't be, in the tf2 directory to work.
 
 You can of course clone the repo as well if you have a git client installed.
 
