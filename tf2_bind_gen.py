@@ -1,10 +1,10 @@
 import json
+import logging
 import re
 from collections import defaultdict
 from io import StringIO
 from os import environ
 from os.path import isfile, join
-import logging
 from random import choice
 from typing import TextIO
 
@@ -250,15 +250,18 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO,
                         format="[TF2BindGen] [%(levelname)s] %(message)s")
-
-    b_fp = open(args.binds, encoding='utf-8', errors='ignore')
-    s_fp = open(args.stats, mode="w+", encoding='utf-8', errors='ignore')
-    c_fp = open(args.config_path, mode="w+", encoding='utf-8', errors='ignore')
-    parser = LogParser(args.log_path, c_fp, b_fp, s_fp)
-    if args.test:
-        parser.read_file(log_path_default)
+    try:
+        b_fp = open(args.binds, encoding='utf-8', errors='ignore')
+        s_fp = open(args.stats, mode="w+", encoding='utf-8', errors='ignore')
+        c_fp = open(args.config_path, mode="w+", encoding='utf-8', errors='ignore')
+    except IOError as err:
+        logger.exception(err)
     else:
-        try:
-            parser.start()
-        except KeyboardInterrupt:
-            parser.stop()
+        parser = LogParser(args.log_path, c_fp, b_fp, s_fp)
+        if args.test:
+            parser.read_file(log_path_default)
+        else:
+            try:
+                parser.start()
+            except KeyboardInterrupt:
+                parser.stop()

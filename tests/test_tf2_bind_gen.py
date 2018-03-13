@@ -1,7 +1,6 @@
+from io import StringIO
 from tempfile import NamedTemporaryFile
 from unittest import TestCase
-
-from io import StringIO
 
 from tf2_bind_gen import LogParser, UserConnected, UserDisconnected, KillMsg
 
