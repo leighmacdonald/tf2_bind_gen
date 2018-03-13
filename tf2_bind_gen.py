@@ -27,7 +27,11 @@ class UserDisconnected(UserConnected):
 class KillMsg(object):
     def __init__(self, player, victim, weapon, crit, total=0):
         self.player = player
-        self.victim = victim.replace(";", "")
+        # TF2 has no escaping in aliases...
+        # Don't allow users to inject via their name
+        for c in (";", "\"", "\'"):
+            victim = victim.replace(c, "")
+        self.victim = victim
         self.weapon = weapon
         self.crit = True if "crit" in crit else False
         self.total = total
