@@ -1,18 +1,33 @@
 import json
 import re
 from collections import defaultdict
+from io import StringIO
 from os import environ
-from os.path import isfile, join, exists
+from os.path import isfile, join
 import logging
 from random import choice
+from typing import TextIO
 
 logger = logging.getLogger("bind_gen")
+
+
+class BindGenError(Exception):
+    pass
+
+
+class UserConnected(BindGenError):
+    def __init__(self, username):
+        self.username = username
+
+
+class UserDisconnected(UserConnected):
+    pass
 
 
 class KillMsg(object):
     def __init__(self, player, victim, weapon, crit, total=0):
         self.player = player
-        self.victim = victim
+        self.victim = victim.replace(";", "")
         self.weapon = weapon
         self.crit = True if "crit" in crit else False
         self.total = total
@@ -27,24 +42,24 @@ class KillMsg(object):
     def __str__(self):
         return "victim: {} weapon: {} crit: {}".format(self.victim, self.weapon, self.crit)
 
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__
+
 
 class StatLogger(object):
-    def __init__(self, stats_file, write_every=5):
-        self.stats_file = stats_file
+    def __init__(self, stats_fp: StringIO, write_every=5):
+        self.stats_fp = stats_fp
         self.writer_count = 0
         self.write_every = write_every
         self.stats = defaultdict(int)
 
     def write(self):
-        with open(self.stats_file, "w", encoding='utf-8', errors='ignore') as log:
-            json.dump(self.stats, log)
+        self.stats_fp.seek(0)
+        json.dump(self.stats, self.stats_fp)
 
     def read(self):
-        if not exists(self.stats_file):
-            return False
-        with open(self.stats_file, encoding='utf-8', errors='ignore') as log:
-            x = json.load(log)
-            self.stats.update(x)
+        self.stats_fp.seek(0)
+        self.stats.update(json.load(self.stats_fp))
 
     def get(self, user_name):
         return self.stats[user_name]
@@ -60,35 +75,43 @@ class StatLogger(object):
 
 class LogParser(object):
     #  NAME killed NAME with GUN.
-    _re_kill = re.compile(r"^(.+)\skilled\s(.+)\swith\s(.+)(\.|\. \(crit\))$")
+    _re_kill = re.compile(r"^(\S+)\skilled\s(\S+)\swith\s(.+)(\.|\. \(crit\))$")
 
     #  NAME connected
-    _re_connected = re.compile(r"^(.+)\sconnected$")
+    _re_connected = re.compile(r"^(\S+)\sconnected$")
 
     #  Disconnecting from abandoned match server
     _re_disconnect = re.compile(r"(^Disconnecting from abandoned match server$|\(Server shutting down\)$)")
 
     _re_bind_key = re.compile(r"^\[(.+?)\](.+?)$")
 
-    def __init__(self, log_path, cfg_path, binds_file, stats_file):
+    def __init__(self, log_path: [str, StringIO], cfg_fp: [StringIO, TextIO], binds_fp: [StringIO, TextIO],
+                 stats_fp: [StringIO, TextIO]):
+        """
+
+        b = open("../binds.txt", encoding='utf-8', errors='ignore')
+        LogParser("", "", b, "")
+
+        :param log_path:
+        :param cfg_fp:
+        :param binds_fp:
+        :param stats_fp:
+        """
         self.log_path = log_path
-        self.cfg_path = cfg_path
+        self.cfg_fp = cfg_fp
         self.username = None
         self.default_bind_key = "generic"
-        self.templates = self.read_binds(binds_file)
-        self.stats = StatLogger(stats_file)
+        self.templates = self.read_binds(binds_fp)
+        self.stats = StatLogger(stats_fp)
 
     def parse_log(self, line):
         if self.username is None:
             m = self._re_connected.search(line)
             if m:
-                self.username = m.groups()[0]
-                logger.info("Connected with username: {}".format(self.username))
-                return
+                username = m.groups()[0]
+                raise UserConnected(username)
         elif self._re_disconnect.match(line):
-            self.username = None
-            logger.info("Disconnected from server")
-            self.stats.write()
+            raise UserDisconnected(self.username)
         else:
             match = self._re_kill.search(line)
             if match:
@@ -99,10 +122,11 @@ class LogParser(object):
                     self.write_cfg(msg)
                     return msg
 
-    def read_binds(self, file_name):
+    def read_binds(self, fp: StringIO):
+        fp.seek(0)
         found = 0
         binds = defaultdict(list)
-        for line in open(file_name, encoding='utf-8', errors='ignore').readlines():
+        for line in fp.readlines():
             real_line = line.strip()
             if real_line not in binds:
                 match_key = self._re_bind_key.search(real_line)
@@ -118,11 +142,11 @@ class LogParser(object):
         return binds
 
     def write_cfg(self, msg: KillMsg):
-        with open(self.cfg_path, 'w+', encoding='utf-8', errors='ignore') as cfg:
-            cfg.write('echo "Loaded log_parser.cfg"\n')
-            alias = '''alias bind_gen "say {} "'''.format(self.gen_message(msg))
-            logger.debug(alias)
-            cfg.write(alias + "\n")
+        self.cfg_fp.seek(0)
+        self.cfg_fp.write('echo "Loaded log_parser.cfg"\n')
+        alias = '''alias bind_gen "say {} "'''.format(self.gen_message(msg))
+        logger.debug(alias)
+        self.cfg_fp.write(alias + "\n")
 
     def gen_message(self, msg: KillMsg):
         try:
@@ -133,19 +157,40 @@ class LogParser(object):
                                      total=msg.total)
         return output_str
 
+    def disconnected(self):
+        logger.info("Disconnected from server")
+        self.username = None
+        self.stats.write()
+
+    def connected(self, username):
+        logger.info("Connected with username: {}".format(username))
+        self.username = username
+
     def start(self):
         for line in self.tail():
-            self.parse_log(line)
+            try:
+                self.parse_log(line)
+            except UserDisconnected:
+                self.disconnected()
+            except UserConnected as u:
+                self.connected(u.username)
 
     def stop(self):
         logger.info("Shutting down...")
-        self.stats.write()
+        if self.username:
+            self.disconnected()
 
     def read_file(self, log_file):
         for line in open(log_file, encoding='utf-8', errors='ignore').readlines():
-            msg = self.parse_log(line)
-            if msg:
-                logger.info(self.gen_message(msg))
+            try:
+                msg = self.parse_log(line)
+            except UserDisconnected:
+                self.disconnected()
+            except UserConnected as u:
+                self.connected(u.username)
+            else:
+                if msg:
+                    logger.info(self.gen_message(msg))
 
     def tail(self):
         first_call = True
@@ -202,7 +247,10 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO,
                         format="[TF2BindGen] [%(levelname)s] %(message)s")
 
-    parser = LogParser(args.log_path, args.config_path, args.binds, args.stats)
+    b_fp = open(args.binds, encoding='utf-8', errors='ignore')
+    s_fp = open(args.stats, mode="w+", encoding='utf-8', errors='ignore')
+    c_fp = open(args.config_path, mode="w+", encoding='utf-8', errors='ignore')
+    parser = LogParser(args.log_path, c_fp, b_fp, s_fp)
     if args.test:
         parser.read_file(log_path_default)
     else:
