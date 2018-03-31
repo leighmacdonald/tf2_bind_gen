@@ -46,7 +46,8 @@ Additionally, you must also add the following launch options to TF2:
 This will enable the required output of tf2 log messages to the default log path. -conclearlog is optional but
 it will clear the log file upon startup so the log file should not get too large.
 
-   usage: tf2_bind_gen.py [-h] [--log_path LOG_PATH] [--config_path CONFIG_PATH]
+
+    usage: tf2_bind_gen.py [-h] [--log_path LOG_PATH] [--config_path CONFIG_PATH]
                            [--db DB] [--test] [--binds BINDS] [--debug]
 
     TF2 Log Tail Parser, Stat Tracker and Text Bind Generator
