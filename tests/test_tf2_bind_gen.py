@@ -1,8 +1,7 @@
-from io import StringIO
 from tempfile import NamedTemporaryFile
 from unittest import TestCase
 
-from tf2_bind_gen import LogParser, UserConnected, UserDisconnected, KillMsg
+from tf2_bind_gen import *
 
 
 class BingGenTestCase(TestCase):
@@ -56,3 +55,6 @@ class TestStringParser(BingGenTestCase):
             else:
                 e = cases[i][1]
                 self.assertEqual(result, e)
+
+    def test_get_class(self):
+        self.assertEqual(get_class("sydney_sleeper"), Class.SNIPER)

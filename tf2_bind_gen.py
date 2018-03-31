@@ -3,16 +3,73 @@ import re
 import sqlite3
 from collections import defaultdict
 from datetime import datetime
+from enum import Enum
 from io import StringIO
 from os import environ
-from os.path import isfile, join
 from random import choice
 from typing import TextIO
 
+# noinspection PyUnresolvedReferences
+from os.path import isfile, join
+
 logger = logging.getLogger("bind_gen")
+
+
+class Class(Enum):
+    SCOUT = "scout"
+    SOLDIER = "soldier"
+    PYRO = "pyro"
+    DEMO = "demo"
+    HEAVY = "heavy"
+    ENGINEER = "engineer"
+    MEDIC = "medic"
+    SNIPER = "sniper"
+    SPY = "spy"
+    MULTI = "multi"
+
 
 ID_MAP = dict()
 PLAYERS = set()
+PLAYER_CLASSES = {}
+WEAPON_MAP = {
+    Class.MULTI: {"fryingpan", "ham_shank", "necro_smasher", "nonnonviolent_protest", "pistol", "telefrag", "world",
+                  "reserve_shooter"},
+    Class.SCOUT: {"atomizer", "bat", "force_a_nature", "pep_pistol", "pistol_scout", "sandman", "scattergun",
+                  "shortstop", "soda_popper", "wrap_assassin"},
+    Class.SOLDIER: {
+        "airstrike", "blackbox", "cow_mangler", "disciplinary_action", "liberty_launcher", "market_gardener",
+        "quake_rl", "rocketlauncher_directhit", "shotgun_soldier", "tf_projectile_rocket", "unique_pickaxe_escape"
+    },
+    Class.PYRO: {"ai_flamethrower", "back_scratcher", "backburner", "deflect_promode", "deflect_rocket", "degreaser",
+                 "detonator", "dragons_fury", "dragons_fury_bonus", "flamethrower", "flaregun", "hot_hand",
+                 "phlogistinator", "powerjack", "rainblower", "scorch_shot", "shotgun_pyro", "sledgehammer",
+                 "the_maul"},
+    Class.DEMO: {
+        "bottle", "demokatana", "iron_bomber", "loch_n_load", "loose_cannon", "loose_cannon_impact",
+        "quickiebomb_launcher", "sticky_resistance", "tf_projectile_pipe", "tf_projectile_pipe_remote", "ullapool_caber"
+    },
+    Class.HEAVY: {
+        "brass_beast", "family_business", "fists", "iron_curtain", "long_heatmaker", "minigun", "natascha",
+        "steel_fists", "tomislav", "warrior_spirit"
+    },
+    Class.ENGINEER: {
+        "frontier_justice", "obj_minisentry", "obj_sentrygun", "obj_sentrygun2", "obj_sentrygun3", "rescue_ranger",
+        "robot_arm", "robot_arm_blender_kill", "robot_arm_combo_kill", "shotgun_primary", "wrangler_kill", "wrench",
+        "wrench_jag"
+    },
+    Class.MEDIC: {
+        "amputator", "blutsauger", "bonesaw", "crusaders_crossbow", "proto_syringe", "syringegun_medic", "taunt_medic",
+        "ubersaw"
+    },
+    Class.SNIPER: {
+        "awper_hand", "bazaar_bargain", "bushwacka", "machina", "player_penetration", "pro_rifle", "pro_smg", "smg",
+        "shooting_star", "sniperrifle", "sydney_sleeper", "tf_projectile_arrow", "the_classic", "tribalkukri"
+    },
+    Class.SPY: {
+        "ambassador", "big_earner", "black_rose", "diamondback", "enforcer", "eternal_reward", "knife", "kunai",
+        "letranger", "revolver", "sharp_dresser", "spy_cicle"
+    }
+}
 
 
 def get_id(player):
@@ -21,6 +78,13 @@ def get_id(player):
     except KeyError:
         PLAYERS.add(player)
         return player
+
+
+def get_class(weapon) -> Class:
+    for class_name, weapons in WEAPON_MAP.items():
+        if weapon in weapons:
+            return class_name
+    return Class.MULTI
 
 
 def init_db(conn: sqlite3.Connection, drop=False):
@@ -102,10 +166,8 @@ class KillMsg(object):
 
 
 class StatLogger(object):
-    def __init__(self, conn: sqlite3.Connection, write_every=5):
+    def __init__(self, conn: sqlite3.Connection):
         self.conn = conn
-        self.writer_count = 0
-        self.write_every = write_every
         self.stats = defaultdict(int)
         self.cursor = conn.cursor()
 
@@ -138,7 +200,7 @@ class StatLogger(object):
             count = self.cursor.rowcount
             if player_name in PLAYERS:
                 PLAYERS.remove(player_name)
-            logger.debug("Migrated {} kill entries to steamid".format(count))
+            logger.debug("Migrated {} kill entries to steam_id".format(count))
         except KeyError:
             pass
 
@@ -186,6 +248,10 @@ class LogParser(object):
         match = self._re_kill.search(line)
         if match:
             msg = KillMsg(*match.groups())
+            killed_class = get_class(msg.weapon)
+            if killed_class != Class.MULTI:
+                PLAYER_CLASSES[msg.player] = killed_class
+                logger.debug("Assigning {} to class {}".format(msg.player, killed_class))
             if msg.player == self.username:
                 msg.total = self.stats.increment(msg)
                 logger.debug(msg)
@@ -224,9 +290,11 @@ class LogParser(object):
             log_cfg.write(alias + "\n")
 
     def gen_message(self, msg: KillMsg):
-        try:
+        if msg.victim in PLAYER_CLASSES and self.templates[PLAYER_CLASSES[msg.victim].value]:
+            template = choice(self.templates[PLAYER_CLASSES[msg.victim].value])
+        elif msg.key in self.templates:
             template = choice(self.templates[msg.key])
-        except IndexError:
+        else:
             template = choice(self.templates[self.default_bind_key])
         output_str = template.format(victim=msg.victim, player=msg.player, weapon=msg.weapon,
                                      total=msg.total)
@@ -334,13 +402,13 @@ if __name__ == "__main__":
         program_files_path = environ['PROGRAMFILES']
     log_path_default = join(program_files_path, r"Steam\steamapps\common\Team Fortress 2\tf\console.log")
     config_path_default = join(program_files_path, r"Steam\steamapps\common\Team Fortress 2\tf\cfg\log_parser.cfg")
-    arg_parser = argparse.ArgumentParser(description='TF2 Log Tail Parser')
+    arg_parser = argparse.ArgumentParser(description='TF2 Log Tail Parser, Stat Tracker and Text Bind Generator')
     arg_parser.add_argument('--log_path', default=log_path_default,
                             help="Path to console.log generated by TF2 (default: {})".format(log_path_default))
     arg_parser.add_argument('--config_path', default=config_path_default,
                             help="Path to the .cfg file to be generated (default: {}".format(config_path_default))
     arg_parser.add_argument('--db', default="stats.db",
-                            help="Path to the database file (default: {}".format("stats.db"))
+                            help="Path to the database file (default: {})".format("stats.db"))
     arg_parser.add_argument('--test', action='store_true', help="Test parsing your existing log files (default: False)")
     arg_parser.add_argument('--binds', default="binds.txt", help="Path to your custom binds file. (default: binds.txt)")
     arg_parser.add_argument('--debug', action='store_true', help="Set the logging level to debug. (default: False)")
