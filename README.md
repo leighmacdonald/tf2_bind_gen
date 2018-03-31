@@ -10,7 +10,7 @@ This script can be used to generate new chat binds on the fly based on certain e
 Installation
 ------------
 
-You can use the pre built executable package available for [download](https://github.com/leighmacdonald/tf2_bind_gen/releases/download/v1.4/tf2_bind_gen-v1.4.zip).
+You can use the pre built executable package available for [download](https://github.com/leighmacdonald/tf2_bind_gen/releases/download/v1.5/tf2_bind_gen-v1.5.zip).
 This includes everything you need to get running.
 
 If you don't trust me or you want to edit or view the code yourself, you must have the below requirements met:
