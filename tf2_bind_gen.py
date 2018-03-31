@@ -7,7 +7,6 @@ from enum import Enum
 from io import StringIO
 from os import environ
 from random import choice
-from typing import TextIO
 
 # noinspection PyUnresolvedReferences
 from os.path import isfile, join
@@ -219,9 +218,7 @@ class LogParser(object):
 
     _re_bind_key = re.compile(r"^\[(.+?)\](.+?)$")
 
-    def __init__(self, stat_logger: StatLogger, log_path: [str, StringIO], config_path: str,
-                 binds_fp: [StringIO, TextIO],
-                 ):
+    def __init__(self, stat_logger: StatLogger, log_path, config_path: str, binds_fp):
         """
 
         b = open("../binds.txt", encoding='utf-8', errors='ignore')
