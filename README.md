@@ -103,7 +103,7 @@ weapon names you see in the console kill log. I don't have a list of all of thes
 you don't know the name of something you want to use. See above for examples of crit and non-crit weapon binds. If no
 [key] is defined, it will be defined as [generic] for you by default.
 
-Additionally you can create binds for specific classes. Be aware that **Class specific binds take precedence** over all
+Additionally you can create binds for specific classes. Be aware that **PlayerClass specific binds take precedence** over all
 other bind types. Ontop of this, they can only be so specific because the TF2 console log does not specify which class
 a user has switched to. This means that we can only track the class the user what when they killed another player with
 a non multi class weapon. In other words, there is no way to tell what class a player is until they have killed someone

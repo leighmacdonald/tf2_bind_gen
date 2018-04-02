@@ -57,4 +57,4 @@ class TestStringParser(BingGenTestCase):
                 self.assertEqual(result, e)
 
     def test_get_class(self):
-        self.assertEqual(get_class("sydney_sleeper"), Class.SNIPER)
+        self.assertEqual(get_class("sydney_sleeper"), PlayerClass.SNIPER)
