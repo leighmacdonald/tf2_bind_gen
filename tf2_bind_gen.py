@@ -10,11 +10,48 @@ from datetime import datetime
 from enum import Enum
 from os import environ
 from random import choice
-
-# noinspection PyUnresolvedReferences
 from os.path import isfile, join
+from markovify import NewlineText
+
+MAX_MSG_LEN = 100
 
 logger = logging.getLogger("bind_gen")
+
+MARKOV_MODEL = None
+
+
+def split_by_n(seq, n):
+    """A generator to divide a sequence into chunks of n units."""
+    while seq:
+        yield seq[:n]
+        seq = seq[n:]
+
+
+def generate_alias(msg):
+    """
+
+    alias "chain" "chat1"
+    alias "chat1" "say Tight Spot; alias chain chat2"
+    alias "chat2" "say Despair Ahead; alias chain chat3"
+
+    :param msg:
+    :return:
+    """
+    msg = msg.replace(";", ".")
+    out = "alias fc1 \"say "
+    if len(msg) > MAX_MSG_LEN:
+        out += "; wait; say ".join(msg for msg in split_by_n(msg, MAX_MSG_LEN))
+    else:
+        out += msg
+
+    return out + "\""
+
+
+rx_question = re.compile("^.+?:\s+(.+)\?$")
+
+
+def get_question(msg):
+    pass
 
 
 class PlayerClass(Enum):
@@ -33,6 +70,11 @@ class PlayerClass(Enum):
     SPY = "spy"
     MULTI = "multi"
 
+
+USER_CMDS = {
+    "help": "This message",
+    "top": "Top players stats in current game"
+}
 
 # Maps in game player names to steam id's
 ID_MAP = dict()
@@ -125,7 +167,7 @@ def init_db(conn, drop=False):
     :param drop: Drop all tables
     :type drop: bool
     """
-    tables = ("kills",)
+    tables = ("kills", "messages")
     cur = conn.cursor()
     if drop:
         for table_name in tables:
@@ -134,7 +176,7 @@ def init_db(conn, drop=False):
             if res:
                 cur.execute("DROP TABLE {};".format(table_name))
         conn.commit()
-    cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name IN (?)", tables)
+    cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name IN (?, ?)", tables)
     res = cur.fetchall()
     if len(res) != len(tables):
         cur.execute("""
@@ -144,6 +186,12 @@ def init_db(conn, drop=False):
                 steam_id TEXT NOT NULL,
                 weapon TEXT NOT NULL,
                 is_crit BOOLEAN,
+                created_on TIMESTAMP
+            );
+            CREATE TABLE messages
+            (
+                msg_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                msg TEXT NOT NULL,
                 created_on TIMESTAMP
             );
         """)
@@ -179,6 +227,17 @@ class IDMapping(BindGenExc):
 class UserDisconnected(UserConnected):
     """ Thrown on user disconnect event """
     pass
+
+
+class UserMessage(BindGenExc):
+    def __init__(self, user_name, message):
+        self.user_name = user_name
+        self.message = message
+
+
+class UserCommand(BindGenExc):
+    def __init__(self, cmd_str):
+        self.cmd_str = cmd_str
 
 
 class KillMsg(object):
@@ -283,6 +342,8 @@ class StatLogger(object):
 class LogParser(object):
     """ Handles reading and parsing the TF2 console log into handled events """
 
+    _re_message = re.compile(r"^(.+?)\s:\s\s(.+?)$")
+
     #  NAME killed NAME with GUN.
     _re_kill = re.compile(r"^(.+?)\skilled\s(.+?)\swith\s(.+)(\.|\. \(crit\))$")
 
@@ -329,6 +390,9 @@ class LogParser(object):
                 raise UserConnected(username)
         if self._re_disconnect.match(line):
             raise UserDisconnected(self.username)
+        msg = self._re_message.search(line)
+        if msg:
+            raise UserMessage(msg.groups()[0],  msg.groups()[1])
         match = self._re_kill.search(line)
         if match:
             msg = KillMsg(*match.groups())
@@ -502,7 +566,19 @@ class LogParser(object):
                 yield ''
 
 
+def fetch_corpus(conn):
+    corpus = []
+    cur = conn.cursor()
+    cur.execute("SELECT msg FROM messages")
+    res = cur.fetchall()
+    for row in res:
+        corpus.append(row[0])
+    logger.debug("Read in corpus: {} lines".format(len(corpus)))
+    return "\n".join(corpus)
+
+
 def main(args):
+
     """  main app entry point """
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO,
                         format="[TF2BindGen] [%(levelname)s] %(message)s")
@@ -513,6 +589,10 @@ def main(args):
     except IOError as e:
         logger.exception(e)
     else:
+        # Load the corpus into memory
+        global MARKOV_MODEL
+        MARKOV_MODEL = NewlineText(fetch_corpus(connection))
+        logger.info("Corpus Test Msg: {}".format(MARKOV_MODEL.make_sentence()))
         stats = StatLogger(connection)
         parser = LogParser(stats, args.log_path, args.config_path, b_fp)
         if args.test:
@@ -549,6 +629,11 @@ def parse_args():
     arg_parser.add_argument('--test', action='store_true', help="Test parsing your existing log files (default: False)")
     arg_parser.add_argument('--binds', default="binds.txt", help="Path to your custom binds file. (default: binds.txt)")
     arg_parser.add_argument('--debug', action='store_true', help="Set the logging level to debug. (default: False)")
+    arg_parser.add_argument('--bind_spam', default='f1', help="Set the bound key for spamming players (""default: f1")
+    arg_parser.add_argument('--bind_sentence', default='f2', help="Set the bound key for generating sentences ("
+                                                                  "default: f2")
+    arg_parser.add_argument('--prefix', default='!', help="Prefix used for user commands(default: !")
+    arg_parser.add_argument('--wolfram', default='', help="Wolfram Alpha API key commands(default: None")
     return arg_parser.parse_args()
 
 

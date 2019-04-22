@@ -32,6 +32,7 @@ class TestStringParser(BingGenTestCase):
         victim = "VICTIM"
         parser = self._make_parser()
         cases = (
+            ("ุ ุ :  Hey Giant Charged Soldier, .", "message"),
             ('KILLER connected\n', 'connected'),
             ('KILLER killed VICTIM with pep_pistol. (crit)\n',
              KillMsg(player=player, victim=victim, weapon="pep_pistol", crit=". (crit)", total=1)),
@@ -46,6 +47,9 @@ class TestStringParser(BingGenTestCase):
             string, expected = t
             try:
                 result = parser.parse_log(string)
+            except UserMessage as m:
+                self.assertEqual(m.user_name, "ุ ุ")
+                self.assertEqual(m.message, "Hey Giant Charged Soldier, .")
             except UserDisconnected:
                 parser.disconnected()
                 self.assertEqual(parser.username, None)
