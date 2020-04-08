@@ -1,0 +1,16 @@
+Get rekt {victim} That makes it {total}! :)
+[generic] Why so mad {victim}?
+[generic] {player} rekt {victim} LOL!
+[market_gardener.crit] Try looking up next time {victim}!
+[tf_projectile_rocket.crit] EZ Crit! Thanks {victim}!
+[tf_projectile_rocket] Thanks for the farm {victim}!
+[world] {player} > world > {victim}
+[pyro] lol {victim} is bad at pyro!
+[soldier] lol {victim} is bad at soldier!
+[demo] lol {victim} is bad at demo!
+[spy] lol {victim} is bad at spy!
+[heavy] lol {victim} is bad at heavy!
+[medic] lol {victim} is bad at medic!
+[scout] lol {victim} is bad at scout!
+[sniper] lol {victim} is bad at sniper!
+[engineer] lol {victim} is bad at engy!
