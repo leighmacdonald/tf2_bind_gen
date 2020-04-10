@@ -7,11 +7,12 @@ package cmd
 import (
 	"bind_generator/app"
 	"fmt"
-	homedir "github.com/mitchellh/go-homedir"
+	"github.com/mitchellh/go-homedir"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"os"
+	"path"
 )
 
 var cfgFile string
@@ -24,7 +25,25 @@ var rootCmd = &cobra.Command{
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
-		app := app.New()
+		if viper.GetBool("debug") {
+			log.SetLevel(log.DebugLevel)
+		}
+		consoleLogPath := viper.GetString("consoleLogPath")
+		if consoleLogPath == "" {
+			consoleLogPath = path.Join(os.Getenv("ProgramFiles(x86)"), "Steam", "steamapps", "common", "Team Fortress 2", "tf", "console.log")
+		}
+		cfgPath := viper.GetString("cfgPath")
+		if cfgPath == "" {
+			consoleLogPath = path.Join(os.Getenv("ProgramFiles(x86)"), "Steam", "steamapps", "common", "Team Fortress 2", "tf", "cfg", "bind_generator.cfg")
+		}
+		bindsPath := viper.GetString("bindsPath")
+		if bindsPath == "" {
+			bindsPath = "./binds.txt"
+		}
+		log.Debugf("console.log path: %s", consoleLogPath)
+		log.Debugf("cfg path: %s", cfgPath)
+		log.Debugf("binds path: %s", bindsPath)
+		app := app.New(consoleLogPath, bindsPath, cfgPath)
 		app.Start()
 	},
 }
@@ -45,11 +64,11 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.tf2_bind_gen_go.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is ./config.yaml)")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.Flags().BoolP("debug", "d", false, "Enable debug output")
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -67,13 +86,14 @@ func initConfig() {
 
 		// Search config in home directory with name ".bind_generator" (without extension).
 		viper.AddConfigPath(home)
-		viper.SetConfigName(".bind_generator")
+		viper.AddConfigPath(".")
+		viper.SetConfigName("config")
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
+		log.Debugln("Using config file:", viper.ConfigFileUsed())
 	}
 }

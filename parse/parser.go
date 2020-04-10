@@ -63,11 +63,12 @@ func (l *LogParser) Start(stopChan chan interface{}) {
 
 func NewLogParser(readChannel chan string, evtChan chan *model.LogEvent) *LogParser {
 	lp := &LogParser{
-		evtChan:      evtChan,
-		ReadChannel:  readChannel,
-		rxMsg:        regexp.MustCompile(`^(.+?)\s:\s\s(.+?)$`),
-		rxKill:       regexp.MustCompile(`^(.+?)\skilled\s(.+?)\swith\s(.+)(\.|\. \(crit\))$`),
-		rxConnected:  regexp.MustCompile(`^(\S+)\sconnected$`),
+		evtChan:     evtChan,
+		ReadChannel: readChannel,
+		rxMsg:       regexp.MustCompile(`^(.+?)\s:\s\s(.+?)$`),
+		rxKill:      regexp.MustCompile(`^(.+?)\skilled\s(.+?)\swith\s(.+)(\.|\. \(crit\))$`),
+		rxConnected: regexp.MustCompile(`(?:.+?\.)?(\S+)\sconnected$`),
+		//rxConnectedAlt: regexp.MustCompile(`(.+?\.)?(\S+)\sconnected$`),
 		rxDisconnect: regexp.MustCompile(`(^Disconnecting from abandoned match server$|\(Server shutting down\)$)`),
 		rxStatusID:   regexp.MustCompile(`"(.+?)"\s+(\[U:\d+:\d+]|STEAM_\d:\d:\d+)`),
 	}

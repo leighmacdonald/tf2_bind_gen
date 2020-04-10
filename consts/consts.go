@@ -6,8 +6,22 @@ var ErrNoTemplate = errors.New("no matching template for kill event")
 var ErrEmptyResult = errors.New("invalid string generated")
 
 const (
-	MaxMsgLen    = 100
-	MinCorpusLen = 5
+	MaxMsgLen          = 100
+	MinCorpusLen       = 5
+	MaxBindGenAttempts = 3
+)
+
+type QueryVar string
+
+const (
+	GoogleResultVar QueryVar = "$google_result"
+)
+
+type QueryType int
+
+const (
+	GoogleResult QueryType = iota
+	WolframResult
 )
 
 type EventType int

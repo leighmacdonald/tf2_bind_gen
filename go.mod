@@ -3,6 +3,7 @@ module bind_generator
 go 1.13
 
 require (
+	github.com/PuerkitoBio/goquery v1.5.1
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/hpcloud/tail v1.0.0
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible

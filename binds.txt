@@ -1,4 +1,4 @@
-Get rekt {victim} That makes it {total}! :)
+[generic] Get rekt {victim} That makes it {total}! :)
 [generic] Why so mad {victim}?
 [generic] {player} rekt {victim} LOL!
 [market_gardener.crit] Try looking up next time {victim}!
@@ -14,3 +14,4 @@ Get rekt {victim} That makes it {total}! :)
 [scout] lol {victim} is bad at scout!
 [sniper] lol {victim} is bad at sniper!
 [engineer] lol {victim} is bad at engy!
+[generic] See {{ .Google_1 }} for more hilarious deaths by {{ .Victim }}!
