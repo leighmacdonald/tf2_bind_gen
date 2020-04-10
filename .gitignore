@@ -89,3 +89,4 @@ fabric.properties
 *.py
 /.idea/
 config.yaml
+binds_custom.txt
