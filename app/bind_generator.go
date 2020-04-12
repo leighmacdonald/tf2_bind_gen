@@ -35,9 +35,6 @@ func New(logFile, bindFile, cfgPath string) BindGenerator {
 	}
 	signal.Notify(g.sigChan, os.Interrupt)
 	g.parser = parse.NewLogParser(g.logMsgChan, g.evtChan)
-	log.SetFormatter(&log.TextFormatter{
-		ForceColors: true,
-	})
 	return g
 }
 
@@ -52,7 +49,6 @@ func (bg *BindGenerator) Start() {
 		log.Errorf("Failed to initialize bind data")
 		os.Exit(1)
 	}
-
 	// Log file reader "tail -f"
 	go func() {
 		if err := parse.FileReader(bg.logFile, bg.logMsgChan, bg.stopChan); err != nil {

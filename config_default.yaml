@@ -1,3 +1,19 @@
-consoleLogPath: S:\Steam\steamapps\common\Team Fortress 2\tf\console.log
-cfgPath: S:\Steam\steamapps\common\Team Fortress 2\tf\cfg\bind_generator.cfg
+// Path to your console.log
+consoleLogPath: C:/Program Files (x86)/Steam/steamapps/common/Team Fortress 2/tf/console.log
+
+// Path to write the binds .cfg file
+cfgPath: C:/Program Files (x86)/Steam/steamapps/common/Team Fortress 2/tf/cfg/bind_generator.cfg
+
+// Path to your binds. Relative to the .exe
 bindsPath: binds.txt
+
+// Enable debugging output
+debug: true
+
+// https://www.cryptocompare.com/cryptopian/api-keys Free keys available here
+cryptocompare:
+
+// Prefixes/interjections to binds t
+interjections:
+  - Hey
+  - Yo

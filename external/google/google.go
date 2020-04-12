@@ -17,7 +17,7 @@ type Result struct {
 func buildGoogleUrl(searchTerm string) string {
 	searchTerm = strings.Trim(searchTerm, " ")
 	searchTerm = strings.Replace(searchTerm, " ", "+", -1)
-	return fmt.Sprintf("%s%s&num=100&hl=%s", "https://www.google.com/search?q=", searchTerm, "en")
+	return fmt.Sprintf("%s%s&num=100&hl=%s", "https://www.external.com/search?q=", searchTerm, "en")
 }
 
 func googleRequest(searchURL string) (*http.Response, error) {
