@@ -63,5 +63,5 @@ func GetSymbols(key string, s []string, c []string) (Prices, error) {
 }
 
 func init() {
-	httpClient = http.Client{Timeout: time.Duration(1 * time.Second)}
+	httpClient = http.Client{Timeout: time.Second}
 }

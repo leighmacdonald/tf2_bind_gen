@@ -13,6 +13,11 @@ debug: true
 // https://www.cryptocompare.com/cryptopian/api-keys Free keys available here
 cryptocompare:
 
+backpacktf:
+  key: xxxxxxxxxxxxxxxxxxxxxxxx
+  client_id: xxxxxxxxxxxxxxxxxxxxxxxx
+  client_secret: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx=
+
 // Prefixes/interjections to binds t
 interjections:
   - Hey

@@ -4,6 +4,9 @@ import "github.com/pkg/errors"
 
 var ErrNoTemplate = errors.New("no matching template for kill event")
 var ErrEmptyResult = errors.New("invalid string generated")
+var ErrNoMatch = errors.New("no matching value")
+var ErrInvalidCommand = errors.New("invalid command")
+var ErrInvalidConfig = errors.New("invalid configuration parameter")
 
 const (
 	MaxMsgLen          = 100
@@ -82,6 +85,7 @@ const (
 	BrassBeast            Weapon = "brass_beast"
 	Bushwacka             Weapon = "bushwacka"
 	Caber                 Weapon = "ullapool_caber"
+	Club                  Weapon = "club"
 	ConscientiousObjector Weapon = "nonnonviolent_protest"
 	CowMangler            Weapon = "cow_mangler"
 	Crossbow              Weapon = "crusaders_crossbow"
@@ -294,6 +298,7 @@ var Weapons = map[PlayerClass][]Weapon{
 		AwperHand,
 		BazaarBargain,
 		Bushwacka,
+		Club,
 		Huntsman,
 		Kukri,
 		Machina,

@@ -206,9 +206,8 @@ func SID32ToSID64(steam32 SID32) SID64 {
 func SID32ToSID3(steam32 SID32) SID3 {
 	steamID := SID32ToSteamID(steam32)
 	if steamID == SID(0) {
-		return SID3("")
+		return ""
 	}
-
 	return SIDToSID3(steamID)
 }
 
@@ -222,7 +221,7 @@ func SID3ToSID(steam3 SID3) SID {
 	id32 := IDparts[len(IDparts)-1]
 
 	if len(id32) <= 0 {
-		return SID("")
+		return ""
 	}
 
 	if id32[len(id32)-1:] == "]" {
@@ -231,7 +230,7 @@ func SID3ToSID(steam3 SID3) SID {
 
 	steam32, err := strconv.ParseUint(id32, 10, 64)
 	if err != nil {
-		return SID("")
+		return ""
 	}
 
 	return SID32ToSteamID(SID32(steam32))
@@ -242,9 +241,9 @@ func SID3ToSID(steam3 SID3) SID {
 //
 // 0 is returned if the process was unsuccessful.
 func SID3ToSID64(steam3 SID3) SID64 {
-	IDparts := strings.Split(string(steam3), ":")
+	idParts := strings.Split(string(steam3), ":")
 
-	id32 := IDparts[len(IDparts)-1]
+	id32 := idParts[len(idParts)-1]
 
 	if len(id32) <= 0 {
 		return SID64(0)
