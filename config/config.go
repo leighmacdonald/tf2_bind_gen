@@ -7,8 +7,8 @@ import (
 
 var CfgFile string
 
-// initConfig reads in config file and ENV variables if set.
-func InitConfig() {
+// Load reads in config file and ENV variables if set.
+func Load() {
 	if CfgFile != "" {
 		// Use config file from the flag.
 		viper.SetConfigFile(CfgFile)
@@ -17,7 +17,6 @@ func InitConfig() {
 		viper.AddConfigPath(".")
 		viper.SetConfigName("config")
 	}
-
 	viper.AutomaticEnv() // read in environment variables that match
 	log.SetFormatter(&log.TextFormatter{
 		ForceColors: true,

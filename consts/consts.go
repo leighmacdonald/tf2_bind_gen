@@ -27,6 +27,13 @@ const (
 	WolframResult
 )
 
+type Team int
+
+const (
+	RED Team = iota
+	BLU
+)
+
 type EventType int
 
 const (
@@ -35,6 +42,7 @@ const (
 	EvtConnect
 	EvtDisconnect
 	EvtStatusId
+	EvtLobbyPlayerTeam
 )
 
 type KillClass int

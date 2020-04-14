@@ -3,20 +3,22 @@ package parse
 import (
 	"bind_generator/consts"
 	"bind_generator/model"
+	"bind_generator/steam"
 	log "github.com/sirupsen/logrus"
 	"regexp"
 	"strings"
 )
 
 type LogParser struct {
-	evtChan      chan *model.LogEvent
-	ReadChannel  chan string
-	rxKill       *regexp.Regexp
-	rxMsg        *regexp.Regexp
-	rxConnected  *regexp.Regexp
-	rxDisconnect *regexp.Regexp
-	rxStatusID   *regexp.Regexp
-	rx           []*regexp.Regexp
+	evtChan       chan *model.LogEvent
+	ReadChannel   chan string
+	rxKill        *regexp.Regexp
+	rxMsg         *regexp.Regexp
+	rxConnected   *regexp.Regexp
+	rxDisconnect  *regexp.Regexp
+	rxStatusID    *regexp.Regexp
+	rxLobbyPlayer *regexp.Regexp
+	rx            []*regexp.Regexp
 }
 
 func (l *LogParser) ParseEvent(msg string) (*model.LogEvent, error) {
@@ -25,6 +27,13 @@ func (l *LogParser) ParseEvent(msg string) (*model.LogEvent, error) {
 			t := consts.EventType(i)
 			le := model.NewLogEvent(t)
 			switch t {
+			case consts.EvtLobbyPlayerTeam:
+				le.PlayerSID = steam.SID3ToSID64(steam.SID3(m[1]))
+				if m[2] == "DEFENDER" {
+					le.Team = consts.RED
+				} else {
+					le.Team = consts.BLU
+				}
 			case consts.EvtConnect:
 				le.Player = m[1]
 			case consts.EvtDisconnect:
@@ -69,8 +78,9 @@ func NewLogParser(readChannel chan string, evtChan chan *model.LogEvent) *LogPar
 		rxKill:      regexp.MustCompile(`^(.+?)\skilled\s(.+?)\swith\s(.+)(\.|\. \(crit\))$`),
 		rxConnected: regexp.MustCompile(`(?:.+?\.)?(\S+)\sconnected$`),
 		//rxConnectedAlt: regexp.MustCompile(`(.+?\.)?(\S+)\sconnected$`),
-		rxDisconnect: regexp.MustCompile(`(^Disconnecting from abandoned match server$|\(Server shutting down\)$)`),
-		rxStatusID:   regexp.MustCompile(`"(.+?)"\s+(\[U:\d+:\d+]|STEAM_\d:\d:\d+)`),
+		rxDisconnect:  regexp.MustCompile(`(^Disconnecting from abandoned match server$|\(Server shutting down\)$)`),
+		rxStatusID:    regexp.MustCompile(`"(.+?)"\s+(\[U:\d+:\d+]|STEAM_\d:\d:\d+)`),
+		rxLobbyPlayer: regexp.MustCompile(`\s+(Member|Pending)\[\d+]\s+(?P<sid>\[.+?]).+?TF_GC_TEAM_(?P<team>(DEFENDERS|INVADERS))`),
 	}
 	lp.rx = []*regexp.Regexp{lp.rxKill, lp.rxMsg, lp.rxConnected, lp.rxDisconnect, lp.rxStatusID}
 	return lp

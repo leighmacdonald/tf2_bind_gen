@@ -2,17 +2,23 @@ package parse
 
 import (
 	"bind_generator/consts"
+	"fmt"
 	"strings"
 )
 
 var commandMap map[userCommandType]commandHandler
 
+type CommandResult struct {
+	Message string
+}
+
 type userCommandType string
 
 type commandHandler struct {
-	handler func(args []string) error
+	handler func(args []string) (CommandResult, error)
 	minArgs int
 	maxArgs int
+	helpMsg string
 }
 
 type userCommand struct {
@@ -45,32 +51,48 @@ func (c *CommandParser) parse(commandStr string) (userCommand, error) {
 	return uc, nil
 }
 
-func help(args []string) error {
-	return nil
+func help(args []string) (CommandResult, error) {
+	var r CommandResult
+	if len(args) == 0 {
+		var m []string
+		for k := range commandMap {
+			m = append(m, fmt.Sprintf("%s%s", "!", k))
+		}
+		r.Message = strings.Join(m, " ")
+	} else {
+		cs := userCommandType(strings.ToLower(args[0]))
+		c, found := commandMap[cs]
+		if !found {
+			r.Message = fmt.Sprintf("Unknown command: %s", cs)
+		} else {
+			r.Message = fmt.Sprintf("!%s - %s", cs, c.helpMsg)
+		}
+	}
+	return r, nil
 }
 
-func addFact(args []string) error {
-	return nil
+func addFact(args []string) (CommandResult, error) {
+	return CommandResult{}, nil
 }
 
-func nextFact(args []string) error {
-	return nil
+func nextFact(args []string) (CommandResult, error) {
+	return CommandResult{}, nil
 }
 
-func price(args []string) error {
-	return nil
+func price(args []string) (CommandResult, error) {
+	return CommandResult{}, nil
 }
 
-func backpack(args []string) error {
-	return nil
+func backpack(args []string) (CommandResult, error) {
+	return CommandResult{}, nil
 }
 
 func init() {
 	commandMap = map[userCommandType]commandHandler{
-		"help":  {help, 0, 1},
-		"add":   {addFact, 0, 1},
-		"next":  {nextFact, 0, 1},
-		"price": {price, 0, 1},
-		"bp":    {backpack, 0, 0},
+		"help":  {help, 0, 1, ""},
+		"add":   {addFact, 0, 1, "Add a new fact"},
+		"next":  {nextFact, 0, 1, "Get the next random fact"},
+		"price": {price, 0, 1, "Get the price of a item"},
+		"bp":    {backpack, 0, 0, "Get the price a users backpack"},
 	}
 }

@@ -7,7 +7,7 @@ import (
 )
 
 func TestInventoryValues(t *testing.T) {
-	config.InitConfig()
+	config.Load()
 	if Authenticate() != nil {
 		t.Skip("No token available")
 		return

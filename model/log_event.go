@@ -31,6 +31,7 @@ type LogEvent struct {
 	IsCritical  bool
 	TimesKilled int
 	Message     string
+	Team        consts.Team
 }
 
 func NewLogEvent(t consts.EventType) *LogEvent {
