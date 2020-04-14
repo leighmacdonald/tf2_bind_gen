@@ -73,21 +73,21 @@ func Authenticate() error {
 
 func InventoryValues(sid steam.SID64) (MarketValue, error) {
 	var mv MarketValue
-	u, e := url.Parse(fmt.Sprintf(urlInventory, sid.Int64()))
-	if e != nil {
-		return MarketValue{}, e
+	u, err := url.Parse(fmt.Sprintf(urlInventory, sid.Int64()))
+	if err != nil {
+		return MarketValue{}, err
 	}
 	v := u.Query()
 	v.Set("key", sid.String())
 	u.RawQuery = v.Encode()
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
-		return MarketValue{}, e
+		return MarketValue{}, err
 	}
 	req.Header.Set("Authorization", token.AccessToken)
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return MarketValue{}, e
+		return MarketValue{}, err
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
@@ -96,10 +96,10 @@ func InventoryValues(sid steam.SID64) (MarketValue, error) {
 	}()
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return MarketValue{}, e
+		return MarketValue{}, err
 	}
 	if err := json.Unmarshal(b, &mv); err != nil {
-		return MarketValue{}, e
+		return MarketValue{}, err
 	}
 	return mv, nil
 }
