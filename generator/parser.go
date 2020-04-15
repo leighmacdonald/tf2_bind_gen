@@ -1,9 +1,10 @@
-package parse
+package generator
 
 import (
 	"bind_generator/consts"
 	"bind_generator/model"
 	"bind_generator/steam"
+	"fmt"
 	log "github.com/sirupsen/logrus"
 	"regexp"
 	"strings"
@@ -18,10 +19,12 @@ type LogParser struct {
 	rxDisconnect  *regexp.Regexp
 	rxStatusID    *regexp.Regexp
 	rxLobbyPlayer *regexp.Regexp
+	rxClearCfg    *regexp.Regexp
 	rx            []*regexp.Regexp
 }
 
 func (l *LogParser) ParseEvent(msg string) (*model.LogEvent, error) {
+	// the i index must to the EventType const values
 	for i, rx := range l.rx {
 		if m := rx.FindStringSubmatch(msg); m != nil {
 			t := consts.EventType(i)
@@ -47,6 +50,8 @@ func (l *LogParser) ParseEvent(msg string) (*model.LogEvent, error) {
 				le.Victim = m[2]
 				le.Weapon = consts.Weapon(m[3])
 				le.IsCritical = strings.HasSuffix(msg, "(crit)")
+			case consts.EvtClearCfg:
+
 			}
 			return le, nil
 		}
@@ -79,8 +84,9 @@ func NewLogParser(readChannel chan string, evtChan chan *model.LogEvent) *LogPar
 		rxConnected: regexp.MustCompile(`(?:.+?\.)?(\S+)\sconnected$`),
 		//rxConnectedAlt: regexp.MustCompile(`(.+?\.)?(\S+)\sconnected$`),
 		rxDisconnect:  regexp.MustCompile(`(^Disconnecting from abandoned match server$|\(Server shutting down\)$)`),
-		rxStatusID:    regexp.MustCompile(`"(.+?)"\s+(\[U:\d+:\d+]|STEAM_\d:\d:\d+)`),
+		rxStatusID:    regexp.MustCompile(`^#\s+(?P<id>\d+)\s"(?P<name>.+?)"\s+(?P<sid>\[U:\d:\d+])\s+(?P<time>\d+:\d+)\s+(?P<ping>\d+)\s+(?P<loss>\d+)`),
 		rxLobbyPlayer: regexp.MustCompile(`\s+(Member|Pending)\[\d+]\s+(?P<sid>\[.+?]).+?TF_GC_TEAM_(?P<team>(DEFENDERS|INVADERS))`),
+		rxClearCfg:    regexp.MustCompile(fmt.Sprintf(`^%s`, consts.ClearConfigMsg)),
 	}
 	lp.rx = []*regexp.Regexp{lp.rxKill, lp.rxMsg, lp.rxConnected, lp.rxDisconnect, lp.rxStatusID}
 	return lp

@@ -323,7 +323,7 @@ func ResolveGID(groupVanityURL string) GID {
 	if len(groupIDTags) >= 2 {
 		groupid, err := strconv.ParseUint(string(groupIDTags[1]), 10, 64)
 		if err != nil {
-			log.Println("Failed to parse GID", err)
+			log.Println("Failed to generator GID", err)
 			return GID(0)
 		}
 		return GID(groupid)
@@ -472,6 +472,38 @@ func ResolveSID64(query string) SID64 {
 	}
 
 	return SID64(output)
+}
+
+func StringToSID64(s string) SID64 {
+	if strings.HasPrefix(s, "[U:") {
+		v := SID3ToSID64(SID3(s))
+		if v.Valid() {
+			return v
+		}
+	} else if strings.HasPrefix(s, "STEAM_") {
+		v := SIDToSID64(SID(s))
+		if v.Valid() {
+			return v
+		}
+
+	} else if len(s) == 17 {
+		i64, err := strconv.ParseUint(s, 10, 64)
+		if err == nil {
+			v := SID64(i64)
+			if v.Valid() {
+				return v
+			}
+		}
+	} else if len(s) == 9 {
+		i32, err := strconv.ParseUint(s, 10, 32)
+		if err == nil {
+			v := SID32ToSID64(SID32(i32))
+			if v.Valid() {
+				return v
+			}
+		}
+	}
+	return 0
 }
 
 func init() {

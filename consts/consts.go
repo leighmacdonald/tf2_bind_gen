@@ -9,6 +9,11 @@ var ErrInvalidCommand = errors.New("invalid command")
 var ErrInvalidConfig = errors.New("invalid configuration parameter")
 
 const (
+	// Indicator for clearing the generated .cfg file
+	ClearConfigMsg = "TBG_CLEAR_CFG;\n"
+
+	// How many events should occur before we execute status again
+	StatusOutputFreq   = 5
 	MaxMsgLen          = 100
 	MinCorpusLen       = 5
 	MaxBindGenAttempts = 3
@@ -43,6 +48,7 @@ const (
 	EvtDisconnect
 	EvtStatusId
 	EvtLobbyPlayerTeam
+	EvtClearCfg
 )
 
 type KillClass int

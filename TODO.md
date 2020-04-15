@@ -1,0 +1,6 @@
+- Track servers, pings via steamid eg: ([A:1:729372672:10372])
+- Query player data from steam (and local db?)
+- Store player stats
+- Load logs.tf data
+- Text generator from logstf corpus
+- COVID api data

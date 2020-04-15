@@ -1,4 +1,4 @@
-package parse
+package generator
 
 import (
 	"bind_generator/consts"

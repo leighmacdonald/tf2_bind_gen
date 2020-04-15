@@ -1,4 +1,4 @@
-package parse
+package generator
 
 import (
 	"bind_generator/consts"
@@ -18,8 +18,6 @@ import (
 	"text/template"
 )
 
-const bindFmt = "echo \"Loaded bind_generator.cfg\"; alias bind_gen \"say %s\"\n"
-
 type bindTemplate struct {
 	Tmpl       *template.Template
 	queryTypes []consts.QueryType
@@ -27,18 +25,6 @@ type bindTemplate struct {
 
 var bindsMap map[string][]bindTemplate
 var interjections []string
-
-// exec bind_gen/scratch.cfg
-// bind_gen
-// con_logfile bind_gen/scratch_cfg
-// echo alias bindgen ""
-// con_logfile console.log
-//
-func WriteBindFile(path string, msg string) error {
-	bind := fmt.Sprintf(bindFmt, msg)
-	log.Debugf("Writing alias data: %s", bind)
-	return ioutil.WriteFile(path, []byte(bind), 0644)
-}
 
 var rxBindTemplate = regexp.MustCompile(`^\[(.+?)]\s+?(.+?)$`)
 var rxBindGoogleResult = regexp.MustCompile(`\$google_result\s+`)
@@ -69,7 +55,7 @@ func ReadBinds(r io.Reader) error {
 			killType := strings.ToLower(m[1])
 			t, err := template.New(fmt.Sprintf("t_%d", bindId)).Parse(bindStr)
 			if err != nil {
-				log.Warnf("Failed to parse template: %s", err.Error())
+				log.Warnf("Failed to generator template: %s", err.Error())
 				continue
 			}
 			binds[killType] = append(binds[killType], bindTemplate{
@@ -78,7 +64,7 @@ func ReadBinds(r io.Reader) error {
 			})
 			bindId++
 		} else {
-			log.Warnf("Failed to parse bind: %s", line)
+			log.Warnf("Failed to generator bind: %s", line)
 		}
 	}
 	inter := viper.GetStringSlice("interjections")
@@ -116,7 +102,7 @@ func getTemplate(event *model.LogEvent) (bindTemplate, error) {
 func simplifyUrl(inURL string) string {
 	u, err := url.Parse(inURL)
 	if err != nil {
-		log.Warnf("Failed to parse url for simplification: %s", inURL)
+		log.Warnf("Failed to generator url for simplification: %s", inURL)
 		return inURL
 	}
 	u.RawQuery = ""

@@ -5,17 +5,37 @@ import (
 	"bind_generator/steam"
 )
 
-type PlayerSet struct {
-	Player  string
-	NameMap map[string]steam.SID64
-	SIDMap  map[steam.SID64]string
+// Current known player state
+type Player struct {
+	Class consts.PlayerClass
+	SID   steam.SID64
+	Team  consts.Team
+	// Times we have killed this player
+	PersonalKillCount int
+	KillCount         int
+	DeathCount        int
 }
 
-func NewPlayerSet() PlayerSet {
-	return PlayerSet{
-		Player:  "",
-		NameMap: make(map[string]steam.SID64),
-		SIDMap:  make(map[steam.SID64]string),
+type PlayerState struct {
+	player  string
+	players []*Player
+}
+
+func (s *PlayerState) Clear() {
+	s.players = []*Player{}
+}
+
+func (s *PlayerState) SetPlayer(player string) bool {
+	return s.player == player
+}
+
+func (s *PlayerState) IsSelf(player string) bool {
+	return s.player == player
+}
+
+func NewPlayerState() PlayerState {
+	return PlayerState{
+		player: "",
 	}
 }
 

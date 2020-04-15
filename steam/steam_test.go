@@ -1,6 +1,7 @@
 package steam
 
 import (
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -15,9 +16,10 @@ account : not logged in  (No account specified)
 tags    : cp,hidden,increased_maxplayers,valve
 players : 24 humans, 0 bots (32 max)
 edicts  : 731 used of 2048 max
-#      2 "WolfXine"          [U:1:166779318]     15:22       85    0 active
 # userid name                uniqueid            connected ping loss state
+#      2 "WolfXine"          [U:1:166779318]     15:22       85    0 active
 #      3 "mdaniels5746"      [U:1:361821288]     15:22       87    0 active
+#     28 "KRGonzales"        [U:1:875620767]     00:29       76   10 active
 #      4 "juan.martinez2009" [U:1:79002518]      15:22       72    0 active
 #      9 "Luuá¸°e"           [U:1:123675776]     15:18      109    0 active
 #      5 "[LBJ] â™› King James â™›" [U:1:87772789] 15:22     76    0 active
@@ -36,7 +38,6 @@ edicts  : 731 used of 2048 max
 #     20 "hard aim pootis serbia" [U:1:49974197] 14:13       84    0 active
 #     18 "Enderz"            [U:1:202535707]     14:41       83    0 active
 #     23 "WAFFLEDUDE"        [U:1:878783526]     10:33      128    0 active
-#     28 "KRGonzales"        [U:1:875620767]     00:29       76   10 active
 #     24 "smokehousesteve"   [U:1:130361378]     09:54      128    0 active
 #     29 "à¸¸"               [U:1:123868297]     00:24       59    0 active
 #     27 "Cyndaquil"         [U:1:198198697]     00:31      131    0 active
@@ -70,6 +71,10 @@ func TestResolveGID(t *testing.T) {
 }
 
 func TestResolveSID(t *testing.T) {
+	apiKey := viper.GetString("steam_api_key")
+	if apiKey == "" {
+		t.Skip("steam_api_key unset")
+	}
 	sid1 := ResolveSID64("https://steamcommunity.com/id/SQUIRRELLY")
 	assert.Equal(t, sid1, SID64(76561197961279983))
 
