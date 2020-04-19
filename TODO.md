@@ -4,3 +4,5 @@
 - Load logs.tf data
 - Text generator from logstf corpus
 - COVID api data
+- Dont require connect message to determine player. Use configures steam_id and status lookup at start of match
+- Support queued and immediate message writing modes

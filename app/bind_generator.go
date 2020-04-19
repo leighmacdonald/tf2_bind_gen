@@ -4,6 +4,7 @@ import (
 	"bind_generator/consts"
 	"bind_generator/generator"
 	"bind_generator/model"
+	"bind_generator/store"
 	"bufio"
 	log "github.com/sirupsen/logrus"
 	"os"
@@ -18,7 +19,8 @@ type BindGenerator struct {
 	state         model.PlayerState
 	parser        *generator.LogParser
 	commandParser generator.CommandParser
-	msgQueue      generator.MessageQueue
+	msgQueue      generator.ConsoleIOQueue
+	store         store.DataStoreI
 	logFile       string
 	bindFile      string
 	cfgPath       string
@@ -32,6 +34,7 @@ func New(logFile, bindFile, cfgPath string) BindGenerator {
 		evtChan:       make(chan *model.LogEvent),
 		sigChan:       make(chan os.Signal, 1),
 		state:         model.NewPlayerState(),
+		store:         &store.SQLiteDataStore{},
 		commandParser: generator.NewCommandParser("!"),
 		logFile:       logFile,
 		cfgPath:       cfgPath,
@@ -39,7 +42,7 @@ func New(logFile, bindFile, cfgPath string) BindGenerator {
 	}
 	signal.Notify(g.sigChan, os.Interrupt)
 	g.parser = generator.NewLogParser(g.logMsgChan, g.evtChan)
-	g.msgQueue = generator.NewMessageQueue(cfgPath, g.stopChan)
+	g.msgQueue = generator.NewConsoleIOQueue(cfgPath, g.stopChan)
 	return g
 }
 
@@ -70,6 +73,7 @@ func (bg *BindGenerator) Start() {
 		log.Infof("Shutting down")
 		bg.stopChan <- true
 	}
+	_ = bg.store.Close()
 }
 func (bg *BindGenerator) handleEvtKill(evt *model.LogEvent) {
 	log.WithFields(log.Fields{

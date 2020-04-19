@@ -3,8 +3,8 @@ package generator
 import (
 	"bind_generator/consts"
 	"bind_generator/model"
-	"bind_generator/steam"
 	"fmt"
+	"github.com/leighmacdonald/steamid"
 	log "github.com/sirupsen/logrus"
 	"regexp"
 	"strings"
@@ -31,7 +31,7 @@ func (l *LogParser) ParseEvent(msg string) (*model.LogEvent, error) {
 			le := model.NewLogEvent(t)
 			switch t {
 			case consts.EvtLobbyPlayerTeam:
-				le.PlayerSID = steam.SID3ToSID64(steam.SID3(m[1]))
+				le.PlayerSID = steamid.SID3ToSID64(steamid.SID3(m[1]))
 				if m[2] == "DEFENDER" {
 					le.Team = consts.RED
 				} else {

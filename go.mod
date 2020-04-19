@@ -6,8 +6,8 @@ require (
 	github.com/PuerkitoBio/goquery v1.5.1
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/hpcloud/tail v1.0.0
+	github.com/leighmacdonald/steamid v0.0.0-20200418113749-73983d616d8e
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
-	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mitchellh/mapstructure v1.2.2 // indirect
 	github.com/pelletier/go-toml v1.7.0 // indirect
 	github.com/pkg/errors v0.8.0
@@ -18,7 +18,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.6.2
-	github.com/stretchr/testify v1.2.2
+	github.com/stretchr/testify v1.5.1
 	golang.org/x/sys v0.0.0-20200331124033-c3d80250170d // indirect
 	golang.org/x/text v0.3.2 // indirect
 	gopkg.in/fsnotify.v1 v1.4.7 // indirect
